@@ -10,33 +10,39 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/common/FormInput';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { api } from '@/lib/api';
-
-const clubTypeLabels: Record<string, string> = {
-  professional: "Club Profesional",
-  academy: "Academia formativa",
-  federation: "Federación / Asociación",
-  independent_scout: "Scout Independiente",
-  independent_coach: "Entrenador Autónomo",
-};
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 
+const clubTypeOptions = [
+  { value: 'professional', label: 'Club Profesional' },
+  { value: 'academy', label: 'Academia' },
+  { value: 'federation', label: 'Federación' },
+  { value: 'independent_scout', label: 'Scout Independiente' },
+];
+
 const clubSchema = z.object({
+  // Step 1 — Organización
+  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
+  clubType: z.string().min(1, 'Selecciona un tipo de organización'),
+  country: z.string().min(2, 'El país es requerido'),
+  city: z.string().min(2, 'La ciudad es requerida'),
+  phone: z.string().min(7, 'Teléfono requerido'),
+  description: z.string().min(10, 'Describe brevemente tu organización (mín. 10 caracteres)').max(500, 'Máximo 500 caracteres'),
+
+  // Responsable
+  responsibleName: z.string().min(2, 'El nombre del responsable es requerido'),
+  responsiblePosition: z.string().optional(),
+
+  // Step 2 — Credenciales
   email: z.string().email('Email inválido'),
   password: z.string().min(8, 'Debe tener mínimo 8 caracteres').regex(/[A-Z]/, 'Debe contener una mayúscula').regex(/[0-9]/, 'Debe contener un número'),
   confirmPassword: z.string(),
-  name: z.string().min(2, 'El nombre de la organización es muy corto'),
-  clubType: z.string().min(2, 'El tipo es requerido'),
-  country: z.string().min(2, 'El país es requerido'),
-  city: z.string().min(2, 'La ciudad es requerida'),
-  contactName: z.string().min(2, 'El nombre de contacto es muy corto'),
-  contactPhone: z.string().optional(),
-  
+
   terms: z.literal(true, {
-    message: 'Debes aceptar los términos y condiciones'
+    errorMap: () => ({ message: 'Debes aceptar los términos y condiciones' })
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
@@ -51,15 +57,28 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
   const router = useRouter();
   const { setToken, setUserType } = useAuthStore();
   
-  const { register, handleSubmit, formState: { errors }, setValue, trigger, watch } = useForm<ClubFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<ClubFormData>({
     resolver: zodResolver(clubSchema),
     mode: 'onChange',
+    defaultValues: {
+      name: '',
+      clubType: '',
+      country: '',
+      city: '',
+      phone: '',
+      description: '',
+      responsibleName: '',
+      responsiblePosition: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
   });
 
   const handleNextStep = async () => {
-    let fieldsToValidate: any[] = [];
+    let fieldsToValidate: (keyof ClubFormData)[] = [];
     if (step === 1) {
-      fieldsToValidate = ['name', 'clubType', 'country', 'city', 'contactName', 'contactPhone'];
+      fieldsToValidate = ['name', 'clubType', 'country', 'city', 'phone', 'description', 'responsibleName'];
     }
 
     const isValid = await trigger(fieldsToValidate);
@@ -78,8 +97,10 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
         club_type: data.clubType,
         country: data.country,
         city: data.city,
-        contact_name: data.contactName,
-        contact_phone: data.contactPhone || null,
+        phone: data.phone,
+        description: data.description,
+        responsible_name: data.responsibleName,
+        responsible_position: data.responsiblePosition || null,
       };
 
       const response = await api.post('/auth/register/club', payload);
@@ -90,7 +111,12 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
       router.push('/dashboard/club');
       
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Hubo un error al registrarte');
+      const detail = error.response?.data?.detail;
+      if (typeof detail === 'string') {
+        toast.error(detail);
+      } else {
+        toast.error('Hubo un error al registrar. Revisa los campos.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -99,8 +125,8 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-2">Registro de Club / Scout / Entrenador</h2>
-        <Progress value={(step / 2) * 100} className="h-2 mb-2 bg-accent/20" indicatorClassName="bg-accent" />
+        <h2 className="text-2xl font-bold mb-2">Registro de Club / Scout</h2>
+        <Progress value={(step / 2) * 100} className="h-2 mb-2" />
         <p className="text-sm text-muted-foreground text-right">Paso {step} de 2</p>
       </div>
 
@@ -113,19 +139,20 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Tipo de Organización / Profesional</label>
+                <label className="text-sm font-medium">Tipo de Organización</label>
                 <Select value={watch('clubType')} onValueChange={(val) => setValue('clubType', val || '', { shouldValidate: true })}>
                   <SelectTrigger className={errors.clubType ? "border-destructive" : ""}>
                     <SelectValue placeholder="Selecciona el tipo">
-                      {(value: string | null) => value ? clubTypeLabels[value] : "Selecciona el tipo"}
+                      {(value: string | null) => {
+                        const opt = clubTypeOptions.find(o => o.value === value);
+                        return opt ? opt.label : "Selecciona el tipo";
+                      }}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent alignItemWithTrigger={false}>
-                    <SelectItem value="professional">Club Profesional</SelectItem>
-                    <SelectItem value="academy">Academia formativa</SelectItem>
-                    <SelectItem value="federation">Federación / Asociación</SelectItem>
-                    <SelectItem value="independent_scout">Scout Independiente</SelectItem>
-                    <SelectItem value="independent_coach">Entrenador Autónomo</SelectItem>
+                  <SelectContent>
+                    {clubTypeOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {errors.clubType && <p className="text-sm text-destructive">{errors.clubType.message}</p>}
@@ -135,10 +162,24 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
             
             <div className="grid grid-cols-2 gap-4">
               <FormInput label="Ciudad" {...register('city')} error={errors.city?.message} />
-              <FormInput label="Nombre de Contacto" {...register('contactName')} error={errors.contactName?.message} />
+              <FormInput label="Teléfono" {...register('phone')} error={errors.phone?.message} />
             </div>
-            
-            <FormInput label="Teléfono de Contacto" {...register('contactPhone')} error={errors.contactPhone?.message} />
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descripción de la Organización</label>
+              <textarea
+                {...register('description')}
+                rows={3}
+                placeholder="Breve descripción de tu club, academia o agencia..."
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+              />
+              {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormInput label="Nombre del Responsable" {...register('responsibleName')} error={errors.responsibleName?.message} />
+              <FormInput label="Cargo (Opcional)" {...register('responsiblePosition')} error={errors.responsiblePosition?.message} />
+            </div>
           </motion.div>
         )}
 

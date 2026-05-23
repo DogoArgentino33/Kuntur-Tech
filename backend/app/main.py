@@ -78,9 +78,17 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-# ── CORS Middleware ───────────────────────────────────────────────
+# ── CORS Middleware ───────────────────────────────────────────
 
-origins = [origin.strip() for origin in settings.ALLOWED_ORIGINS.split(",")]
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+# Add any extra origins from settings
+for origin in settings.ALLOWED_ORIGINS.split(","):
+    origin = origin.strip()
+    if origin and origin not in origins:
+        origins.append(origin)
 
 app.add_middleware(
     CORSMiddleware,

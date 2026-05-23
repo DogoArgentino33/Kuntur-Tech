@@ -56,6 +56,24 @@ export function AthleteForm({ onBack }: { onBack: () => void }) {
   const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<AthleteFormData>({
     resolver: zodResolver(athleteSchema),
     mode: 'onChange',
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      dateOfBirth: '',
+      country: '',
+      phone: '',
+      sportId: '',
+      positionId: '',
+      height: '',
+      weight: '',
+      dominantSide: '',
+      experienceYears: '',
+      currentTeam: '',
+      bio: '',
+    },
   });
 
   const selectedSportId = watch('sportId');
@@ -104,7 +122,12 @@ export function AthleteForm({ onBack }: { onBack: () => void }) {
       router.push('/dashboard/athlete');
       
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Hubo un error al registrarte');
+      const detail = error.response?.data?.detail;
+      if (typeof detail === 'string') {
+        toast.error(detail);
+      } else {
+        toast.error('Hubo un error al registrarte. Revisa los campos.');
+      }
     } finally {
       setIsSubmitting(false);
     }

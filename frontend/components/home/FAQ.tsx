@@ -42,7 +42,7 @@ export function FAQ() {
           </p>
         </div>
 
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion className="w-full">
           {faqs.map((faq, index) => (
             <AccordionItem key={index} value={`item-${index}`} className="border-white/10">
               <AccordionTrigger className="text-left text-base md:text-lg hover:text-primary transition-colors">
