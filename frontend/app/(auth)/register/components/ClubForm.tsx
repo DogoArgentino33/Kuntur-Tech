@@ -11,7 +11,16 @@ import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/common/FormInput';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from '@/lib/api';
+
+const clubTypeLabels: Record<string, string> = {
+  professional: "Club Profesional",
+  academy: "Academia formativa",
+  federation: "Federación / Asociación",
+  independent_scout: "Scout Independiente",
+  independent_coach: "Entrenador Autónomo",
+};
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 
@@ -27,7 +36,7 @@ const clubSchema = z.object({
   contactPhone: z.string().optional(),
   
   terms: z.literal(true, {
-    errorMap: () => ({ message: 'Debes aceptar los términos y condiciones' })
+    message: 'Debes aceptar los términos y condiciones'
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
@@ -42,7 +51,7 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
   const router = useRouter();
   const { setToken, setUserType } = useAuthStore();
   
-  const { register, handleSubmit, formState: { errors }, setValue, trigger } = useForm<ClubFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, trigger, watch } = useForm<ClubFormData>({
     resolver: zodResolver(clubSchema),
     mode: 'onChange',
   });
@@ -90,8 +99,8 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-2">Registro de Club / Scout</h2>
-        <Progress value={(step / 2) * 100} className="h-2 mb-2 bg-accent/20" indicatorColor="bg-accent" />
+        <h2 className="text-2xl font-bold mb-2">Registro de Club / Scout / Entrenador</h2>
+        <Progress value={(step / 2) * 100} className="h-2 mb-2 bg-accent/20" indicatorClassName="bg-accent" />
         <p className="text-sm text-muted-foreground text-right">Paso {step} de 2</p>
       </div>
 
@@ -103,7 +112,24 @@ export function ClubForm({ onBack }: { onBack: () => void }) {
             <FormInput label="Nombre de la Organización / Club" {...register('name')} error={errors.name?.message} />
             
             <div className="grid grid-cols-2 gap-4">
-              <FormInput label="Tipo (Club, Agencia, Scout)" {...register('clubType')} error={errors.clubType?.message} />
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Tipo de Organización / Profesional</label>
+                <Select value={watch('clubType')} onValueChange={(val) => setValue('clubType', val || '', { shouldValidate: true })}>
+                  <SelectTrigger className={errors.clubType ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Selecciona el tipo">
+                      {(value: string | null) => value ? clubTypeLabels[value] : "Selecciona el tipo"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger={false}>
+                    <SelectItem value="professional">Club Profesional</SelectItem>
+                    <SelectItem value="academy">Academia formativa</SelectItem>
+                    <SelectItem value="federation">Federación / Asociación</SelectItem>
+                    <SelectItem value="independent_scout">Scout Independiente</SelectItem>
+                    <SelectItem value="independent_coach">Entrenador Autónomo</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.clubType && <p className="text-sm text-destructive">{errors.clubType.message}</p>}
+              </div>
               <FormInput label="País" {...register('country')} error={errors.country?.message} />
             </div>
             

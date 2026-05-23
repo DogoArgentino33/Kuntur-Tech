@@ -37,7 +37,7 @@ const athleteSchema = z.object({
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   
   terms: z.literal(true, {
-    errorMap: () => ({ message: 'Debes aceptar los términos y condiciones' })
+    message: 'Debes aceptar los términos y condiciones'
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
@@ -139,11 +139,13 @@ export function AthleteForm({ onBack }: { onBack: () => void }) {
               <FormInput label="Fecha de Nacimiento" type="date" {...register('dateOfBirth')} error={errors.dateOfBirth?.message} />
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">País</label>
-                <Select onValueChange={(val) => setValue('country', val)}>
+                <Select value={watch('country')} onValueChange={(val) => setValue('country', val || '', { shouldValidate: true })}>
                   <SelectTrigger className={errors.country ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Selecciona un país" />
+                    <SelectValue placeholder="Selecciona un país">
+                      {(value: string | null) => value || "Selecciona un país"}
+                    </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent alignItemWithTrigger={false}>
                     <SelectItem value="Argentina">Argentina</SelectItem>
                     <SelectItem value="Chile">Chile</SelectItem>
                     <SelectItem value="Colombia">Colombia</SelectItem>
@@ -163,11 +165,16 @@ export function AthleteForm({ onBack }: { onBack: () => void }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Deporte Principal</label>
-                <Select onValueChange={(val) => setValue('sportId', val)}>
+                <Select value={watch('sportId')} onValueChange={(val) => setValue('sportId', val || '', { shouldValidate: true })}>
                   <SelectTrigger className={errors.sportId ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Selecciona..." />
+                    <SelectValue placeholder="Selecciona...">
+                      {(value: string | null) => {
+                        const sport = sports.find(s => s.id.toString() === value);
+                        return sport ? sport.name : "Selecciona...";
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent alignItemWithTrigger={false}>
                     {sports.map(s => (
                       <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
                     ))}
@@ -178,11 +185,16 @@ export function AthleteForm({ onBack }: { onBack: () => void }) {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Posición</label>
-                <Select disabled={!selectedSportId} onValueChange={(val) => setValue('positionId', val)}>
+                <Select disabled={!selectedSportId} value={watch('positionId')} onValueChange={(val) => setValue('positionId', val || '', { shouldValidate: true })}>
                   <SelectTrigger className={errors.positionId ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Selecciona..." />
+                    <SelectValue placeholder="Selecciona...">
+                      {(value: string | null) => {
+                        const pos = positions.find(p => p.id.toString() === value);
+                        return pos ? pos.name : "Selecciona...";
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent alignItemWithTrigger={false}>
                     {positions.map(p => (
                       <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
                     ))}

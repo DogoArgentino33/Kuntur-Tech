@@ -48,9 +48,9 @@ export function UserTypeSelector({ onSelect }: UserTypeSelectorProps) {
             <div className="w-16 h-16 rounded-full bg-accent/10 text-accent flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <ShieldCheck className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-bold mb-2">Club / Scout</h3>
+            <h3 className="text-xl font-bold mb-2">Club / Scout / Entrenador</h3>
             <p className="text-sm text-muted-foreground">
-              Represento una organización y busco talentos globales.
+              Represento una organización o busco talentos como profesional independiente.
             </p>
           </div>
         </Card>
