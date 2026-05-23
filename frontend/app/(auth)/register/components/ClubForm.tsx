@@ -21,6 +21,7 @@ const clubTypeOptions = [
   { value: 'academy', label: 'Academia' },
   { value: 'federation', label: 'Federación' },
   { value: 'independent_scout', label: 'Scout Independiente' },
+  { value: 'independent_coach', label: 'Entrenador Autónomo' },
 ];
 
 const clubSchema = z.object({
@@ -42,7 +43,7 @@ const clubSchema = z.object({
   confirmPassword: z.string(),
 
   terms: z.literal(true, {
-    errorMap: () => ({ message: 'Debes aceptar los términos y condiciones' })
+    message: 'Debes aceptar los términos y condiciones'
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",

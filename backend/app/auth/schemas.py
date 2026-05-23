@@ -92,7 +92,7 @@ class RegisterClubRequest(BaseModel):
     """All data needed to register a club/organization."""
     # Organization info
     name: str
-    club_type: str  # "professional", "academy", "federation", "independent_scout"
+    club_type: str  # "professional", "academy", "federation", "independent_scout", "independent_coach"
     country: str
     city: str
     phone: str

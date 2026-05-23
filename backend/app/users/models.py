@@ -16,6 +16,7 @@ class ClubType(str, enum.Enum):
     ACADEMY = "academy"
     FEDERATION = "federation"
     INDEPENDENT_SCOUT = "independent_scout"
+    INDEPENDENT_COACH = "independent_coach"
 
 
 class Athlete(Base):
