@@ -36,3 +36,25 @@ export function useSports() {
 
   return { sports, isLoading };
 }
+
+export function usePositions(sportId: number | null) {
+  const [positions, setPositions] = useState<Sport[]>([]);
+  
+  useEffect(() => {
+    if (!sportId) {
+      setPositions([]);
+      return;
+    }
+    
+    // Mock positions based on sportId
+    const getPositions = () => {
+      if (sportId === 1) return [{ id: 1, name: 'Portero' }, { id: 2, name: 'Defensa' }, { id: 3, name: 'Mediocampista' }, { id: 4, name: 'Delantero' }];
+      if (sportId === 2) return [{ id: 5, name: 'Base' }, { id: 6, name: 'Escolta' }, { id: 7, name: 'Alero' }];
+      return [{ id: 8, name: 'General' }];
+    };
+    
+    setPositions(getPositions());
+  }, [sportId]);
+
+  return { positions };
+}

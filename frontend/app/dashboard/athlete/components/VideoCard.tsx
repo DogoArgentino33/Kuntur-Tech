@@ -19,6 +19,8 @@ interface VideoCardProps {
   onView: () => void;
 }
 
+import { getMediaUrl } from '@/lib/api';
+
 export function VideoCard({ video, onEdit, onDelete, onView }: VideoCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -59,7 +61,7 @@ export function VideoCard({ video, onEdit, onDelete, onView }: VideoCardProps) {
       {/* Thumbnail Area */}
       <div className="relative aspect-video bg-black cursor-pointer" onClick={onView}>
         <img 
-          src={video.thumbnail_url} 
+          src={getMediaUrl(video.thumbnail_url)} 
           alt={video.title}
           className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity"
         />

@@ -4,6 +4,13 @@ import { useAuthStore } from '@/stores/authStore';
 // URL base de la API
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
+export const getMediaUrl = (path: string | undefined | null) => {
+  if (!path) return '';
+  if (path.startsWith('http') || path.startsWith('blob:')) return path;
+  const baseUrl = API_URL.replace('/api/v1', '');
+  return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {

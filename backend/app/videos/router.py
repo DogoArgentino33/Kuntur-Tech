@@ -9,7 +9,7 @@ from typing import List
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.dependencies import get_current_user
 from app.auth.models import User
 from app.database import get_db
 from app.users.models import Athlete

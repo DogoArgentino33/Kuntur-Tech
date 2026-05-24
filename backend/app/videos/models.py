@@ -22,8 +22,8 @@ class Video(Base):
     __tablename__ = "videos"
 
     id = Column(Integer, primary_key=True, index=True)
-    athlete_id = Column(Integer, ForeignKey("athlete.id", ondelete="CASCADE"), nullable=False, index=True)
-    sport_id = Column(Integer, ForeignKey("sport.id"), nullable=False)
+    athlete_id = Column(Integer, ForeignKey("athletes.id", ondelete="CASCADE"), nullable=False, index=True)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False)
     
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)

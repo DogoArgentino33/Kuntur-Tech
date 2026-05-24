@@ -11,6 +11,8 @@ interface VideoPlayerModalProps {
   onClose: () => void;
 }
 
+import { getMediaUrl } from '@/lib/api';
+
 export function VideoPlayerModal({ video, onClose }: VideoPlayerModalProps) {
   useEffect(() => {
     if (!video) return;
@@ -58,7 +60,7 @@ export function VideoPlayerModal({ video, onClose }: VideoPlayerModalProps) {
               controls
               autoPlay
               className="w-full h-full min-h-[360px] bg-black"
-              src={video.file_url}
+              src={getMediaUrl(video.file_url)}
             >
               Tu navegador no soporta la reproducción de video.
             </video>
