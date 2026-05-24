@@ -8,6 +8,7 @@ import * as z from 'zod';
 import { toast } from 'sonner';
 import { UploadCloud, X, Film, Loader2 } from 'lucide-react';
 
+import type { Video } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/common/FormInput';
 import { Progress } from '@/components/ui/progress';
@@ -19,7 +20,7 @@ import { api } from '@/lib/api'; // Real api client, though for now we mock the 
 interface VideoUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (title: string) => void;
+  onSuccess: (newVideo: Video) => void;
   athleteSportId?: number;
 }
 
@@ -145,13 +146,29 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
       
       toast.success('¡Video subido exitosamente! Ahora está en revisión.');
       
+      const sportName = sports.find((s) => s.id.toString() === data.sportId)?.name || 'Fútbol';
+      const videoUrl = URL.createObjectURL(file);
+      const newVideo: Video = {
+        id: Date.now(),
+        title: data.title,
+        description: data.description || null,
+        sport_name: sportName,
+        file_url: videoUrl,
+        thumbnail_url: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400&h=225',
+        duration_seconds: 0,
+        status: 'pending',
+        views_count: 0,
+        created_at: new Date().toISOString(),
+        rejection_reason: null,
+      };
+
       // Reset & Close
       setTimeout(() => {
         reset();
         setFile(null);
         setUploadProgress(0);
         setIsUploading(false);
-        onSuccess(data.title);
+        onSuccess(newVideo);
       }, 500);
 
     } catch (error) {

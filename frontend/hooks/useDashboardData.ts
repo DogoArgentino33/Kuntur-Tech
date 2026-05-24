@@ -19,7 +19,7 @@ const MOCK_VIDEOS: Video[] = [
     title: 'Entrenamiento de velocidad — Sprint 100m',
     description: 'Sesión de velocidad con cronómetro profesional',
     sport_name: 'Fútbol',
-    file_url: '#',
+    file_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     thumbnail_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=400&h=225',
     duration_seconds: 185,
     status: 'approved',
@@ -31,7 +31,7 @@ const MOCK_VIDEOS: Video[] = [
     title: 'Highlights — Torneo Regional Sub-20',
     description: 'Mejores momentos del partido semifinal',
     sport_name: 'Fútbol',
-    file_url: '#',
+    file_url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     thumbnail_url: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=400&h=225',
     duration_seconds: 320,
     status: 'approved',
@@ -43,7 +43,7 @@ const MOCK_VIDEOS: Video[] = [
     title: 'Práctica de tiros libres',
     description: 'Sesión de tiros libres desde diferentes ángulos',
     sport_name: 'Fútbol',
-    file_url: '#',
+    file_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
     thumbnail_url: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&q=80&w=400&h=225',
     duration_seconds: 240,
     status: 'pending',
@@ -175,19 +175,8 @@ export function useDashboardData() {
     setVideos((prev) => prev.filter((v) => v.id !== videoId));
   };
 
-  const addMockVideo = (title: string) => {
-    const newVideo: Video = {
-      id: Date.now(),
-      title,
-      sport_name: athlete?.primary_sport?.name || 'Fútbol',
-      file_url: '#',
-      thumbnail_url: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400&h=225',
-      duration_seconds: 0,
-      status: 'pending',
-      views_count: 0,
-      created_at: new Date().toISOString(),
-    };
-    setVideos((prev) => [newVideo, ...prev]);
+  const addVideo = (video: Video) => {
+    setVideos((prev) => [video, ...prev]);
   };
 
   return {
@@ -200,6 +189,6 @@ export function useDashboardData() {
     error,
     refetch: fetchData,
     deleteVideo,
-    addMockVideo,
+    addVideo,
   };
 }
