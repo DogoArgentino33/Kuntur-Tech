@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { UploadCloud, X, Film, Loader2 } from 'lucide-react';
+import { UploadCloud, X, Film, Loader2, Camera, Circle, Square, Check, RefreshCcw } from 'lucide-react';
 
 import type { Video } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,43 @@ interface VideoUploadModalProps {
   onSuccess: (newVideo: Video) => void;
   athleteSportId?: number;
 }
+
+const generateThumbnail = (file: File): Promise<Blob | null> => {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+
+    video.onloadedmetadata = () => {
+      // Seek to 1 second or 25% of the video if it's very short
+      video.currentTime = Math.min(1, video.duration / 4);
+    };
+
+    video.onseeked = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          resolve(blob);
+        }, 'image/jpeg', 0.8);
+      } else {
+        resolve(null);
+      }
+    };
+    
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+  });
+};
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/mpeg", "video/webm"];
@@ -43,6 +80,16 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Recording states
+  const [recordingMode, setRecordingMode] = useState<'upload' | 'record' | 'preview'>('upload');
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   
   const { sports } = useSports();
   
@@ -107,6 +154,84 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
     }
   };
 
+  // Recording Functions
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      setRecordingMode('record');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      toast.error('No se pudo acceder a la cámara o micrófono.');
+      setRecordingMode('upload');
+    }
+  };
+
+  const startRecording = () => {
+    if (!streamRef.current) return;
+    chunksRef.current = [];
+    const mediaRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+    mediaRecorderRef.current = mediaRecorder;
+    
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunksRef.current.push(e.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      setRecordedUrl(url);
+      setRecordingMode('preview');
+      stopCamera();
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const discardRecording = () => {
+    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+    setRecordedUrl(null);
+    startCamera();
+  };
+
+  const acceptRecording = () => {
+    if (chunksRef.current.length === 0) return;
+    const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+    const newFile = new File([blob], `grabacion_${new Date().getTime()}.webm`, { type: 'video/webm' });
+    setFile(newFile);
+    if (!watch('title')) {
+      setValue('title', 'Grabación de cámara');
+    }
+    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+    setRecordedUrl(null);
+    setRecordingMode('upload');
+  };
+
+  const handleClose = () => {
+    stopCamera();
+    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+    onClose();
+  };
+
   const onSubmit = async (data: VideoUploadData) => {
     if (!file) {
       toast.error('Debes seleccionar un video para subir');
@@ -135,6 +260,12 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
       formData.append('sport_id', data.sportId);
       if (data.recordedDate) formData.append('recorded_date', data.recordedDate);
       if (data.location) formData.append('location', data.location);
+
+      // Generate and append thumbnail
+      const thumbnailBlob = await generateThumbnail(file);
+      if (thumbnailBlob) {
+        formData.append('thumbnail', thumbnailBlob, 'thumbnail.jpg');
+      }
 
       // Upload to backend
       const response = await api.post('/videos/upload', formData, {
@@ -174,7 +305,7 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         />
         
@@ -191,7 +322,7 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
               Subir Nuevo Video
             </h2>
             <button 
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isUploading}
               className="text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
@@ -203,19 +334,68 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
           <div className="p-6 overflow-y-auto custom-scrollbar">
             <form id="upload-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               
-              {/* File Dropzone */}
-              <div 
-                className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${
-                  isDragging 
-                    ? 'border-primary bg-primary/5' 
-                    : file 
-                      ? 'border-green-500/50 bg-green-500/5' 
-                      : 'border-white/10 hover:border-white/20 bg-secondary/50'
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
+              {/* Record Mode View */}
+              {recordingMode === 'record' && (
+                <div className="relative border-2 border-primary/30 rounded-xl overflow-hidden bg-black aspect-video flex flex-col items-center justify-center">
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    muted 
+                    playsInline 
+                    className="absolute inset-0 w-full h-full object-cover" 
+                  />
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-10">
+                    {!isRecording ? (
+                      <Button type="button" onClick={startRecording} className="rounded-full h-14 w-14 bg-red-500 hover:bg-red-600 text-white shadow-lg p-0 flex items-center justify-center border-4 border-white/20">
+                        <Circle className="h-6 w-6 fill-current" />
+                      </Button>
+                    ) : (
+                      <Button type="button" onClick={stopRecording} className="rounded-full h-14 w-14 bg-red-500 hover:bg-red-600 text-white shadow-lg p-0 flex items-center justify-center border-4 border-white/20 animate-pulse">
+                        <Square className="h-5 w-5 fill-current" />
+                      </Button>
+                    )}
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 bg-black/50 hover:bg-black/80" onClick={() => { stopCamera(); setRecordingMode('upload'); }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Preview Mode View */}
+              {recordingMode === 'preview' && recordedUrl && (
+                <div className="relative border-2 border-primary/30 rounded-xl overflow-hidden bg-black aspect-video flex flex-col items-center justify-center">
+                  <video 
+                    src={recordedUrl} 
+                    controls 
+                    className="absolute inset-0 w-full h-full object-contain" 
+                  />
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-10">
+                    <Button type="button" variant="secondary" onClick={discardRecording} className="shadow-lg">
+                      <RefreshCcw className="mr-2 h-4 w-4" />
+                      Rehacer
+                    </Button>
+                    <Button type="button" className="bg-green-500 hover:bg-green-600 text-white shadow-lg" onClick={acceptRecording}>
+                      <Check className="mr-2 h-4 w-4" />
+                      Usar este video
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Dropzone View */}
+              {recordingMode === 'upload' && (
+                <div 
+                  className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${
+                    isDragging 
+                      ? 'border-primary bg-primary/5' 
+                      : file 
+                        ? 'border-green-500/50 bg-green-500/5' 
+                        : 'border-white/10 hover:border-white/20 bg-secondary/50'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                 <input 
                   type="file" 
                   accept="video/mp4,video/quicktime,video/mpeg,video/webm"
@@ -257,17 +437,28 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
                       <p className="font-medium">Arrastra tu video aquí</p>
                       <p className="text-sm text-muted-foreground mt-1">MP4, MOV, WebM hasta 500MB</p>
                     </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="mt-4 bg-background"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Explorar archivos
-                    </Button>
+                    <div className="flex gap-3 mt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="bg-background"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Explorar archivos
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="secondary" 
+                        onClick={startCamera}
+                      >
+                        <Camera className="mr-2 h-4 w-4" />
+                        Grabar con Cámara
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
+              )}
 
               {/* Form Fields */}
               <div className="grid gap-4">
@@ -348,7 +539,7 @@ export function VideoUploadModal({ isOpen, onClose, onSuccess, athleteSportId }:
               </div>
             ) : (
               <div className="flex justify-end gap-3">
-                <Button type="button" variant="ghost" onClick={onClose}>
+                <Button type="button" variant="ghost" onClick={handleClose}>
                   Cancelar
                 </Button>
                 <Button type="submit" form="upload-form" className="bg-primary text-black hover:bg-primary/90">

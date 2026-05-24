@@ -180,8 +180,13 @@ export function useDashboardData() {
   }, [fetchData]);
 
   const deleteVideo = async (videoId: number) => {
-    // Mock: just remove from local state
-    setVideos((prev) => prev.filter((v) => v.id !== videoId));
+    try {
+      await api.delete(`/videos/${videoId}`);
+      setVideos((prev) => prev.filter((v) => v.id !== videoId));
+    } catch (err) {
+      console.error('Error deleting video:', err);
+      throw err;
+    }
   };
 
   const addVideo = (video: Video) => {
