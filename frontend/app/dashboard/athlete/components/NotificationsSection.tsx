@@ -49,15 +49,15 @@ export function NotificationsSection({ notifications }: NotificationsSectionProp
   };
 
   return (
-    <div className="bg-card border border-white/5 rounded-2xl p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold flex items-center gap-2">
+    <div className="bg-card border border-white/10 rounded-3xl p-4 h-full flex flex-col">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
           <Bell className="h-5 w-5" />
           Notificaciones
         </h3>
       </div>
 
-      <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+      <div className="flex-1 flex flex-col gap-2 overflow-hidden">
         {notifications.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground pb-8">
             No tienes notificaciones nuevas
@@ -69,14 +69,14 @@ export function NotificationsSection({ notifications }: NotificationsSectionProp
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`flex items-start gap-3 p-3 rounded-xl transition-colors hover:bg-white/5 ${!notif.read ? 'bg-white/5' : ''}`}
+              className={`flex items-start gap-3 rounded-3xl border border-white/5 p-3 transition-colors hover:bg-white/5 ${!notif.read ? 'bg-white/5' : ''}`}
             >
-              <div className={`mt-0.5 p-2 rounded-full shrink-0 ${getBg(notif.type)}`}>
+              <div className={`mt-0.5 p-2 rounded-2xl shrink-0 ${getBg(notif.type)}`}>
                 {getIcon(notif.type)}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">{notif.title}</p>
-                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                   {notif.description}
                 </p>
                 <p className="text-[10px] text-muted-foreground/70 mt-1">
@@ -84,7 +84,7 @@ export function NotificationsSection({ notifications }: NotificationsSectionProp
                 </p>
               </div>
               {!notif.read && (
-                <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />
+                <span className="mt-2 h-2 w-2 rounded-full bg-primary shrink-0" />
               )}
             </motion.div>
           ))

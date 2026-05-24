@@ -54,11 +54,11 @@ export default function AthleteDashboardPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-6 pb-20 lg:pb-10">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         
         {/* 1. Hero Section */}
         {isLoading ? (
-          <div className="h-48 bg-card border-b border-white/5 animate-pulse" />
+          <div className="h-44 rounded-3xl bg-card border border-white/5 animate-pulse" />
         ) : (
           <HeroSection 
             athlete={athlete} 
@@ -67,14 +67,14 @@ export default function AthleteDashboardPage() {
           />
         )}
 
-        <div className="px-6 lg:px-10 flex flex-col gap-8 mt-2">
+        <div className="mt-6 space-y-6">
           
           {/* 2. Stats Section */}
           <section>
-            <h2 className="text-xl font-bold mb-4 sr-only">Estadísticas</h2>
+            <h2 className="sr-only">Estadísticas</h2>
             {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-                {[1,2,3,4,5].map(i => <div key={i} className="h-28 bg-card rounded-xl border border-white/5 animate-pulse" />)}
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+                {[1,2,3,4,5].map(i => <div key={i} className="h-24 rounded-2xl bg-card border border-white/5 animate-pulse" />)}
               </div>
             ) : (
               <StatsSection stats={stats} />
@@ -82,17 +82,17 @@ export default function AthleteDashboardPage() {
           </section>
 
           {/* 3. Layout Grid for Interests & Notifications */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-6">
+            <div>
               {isLoading ? (
-                <div className="h-64 bg-card rounded-2xl border border-white/5 animate-pulse" />
+                <div className="h-72 rounded-3xl bg-card border border-white/5 animate-pulse" />
               ) : (
                 <InterestSection interests={interests} total={interests.length} />
               )}
             </div>
-            <div className="lg:col-span-1 h-96 lg:h-auto">
+            <div>
               {isLoading ? (
-                <div className="h-full bg-card rounded-2xl border border-white/5 animate-pulse" />
+                <div className="h-72 rounded-3xl bg-card border border-white/5 animate-pulse" />
               ) : (
                 <NotificationsSection notifications={notifications} />
               )}
@@ -102,18 +102,15 @@ export default function AthleteDashboardPage() {
         </div>
 
         {/* 4. My Videos Section */}
-        <section className="bg-background relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 pointer-events-none" />
-          <div className="relative">
-            <MyVideosSection 
-              videos={videos}
-              isLoading={isLoading}
-              onUploadClick={() => setIsUploadModalOpen(true)}
-              onEdit={(id) => console.log('Edit video', id)}
-              onDelete={deleteVideo}
-              onView={handleViewVideo}
-            />
-          </div>
+        <section className="relative">
+          <MyVideosSection 
+            videos={videos}
+            isLoading={isLoading}
+            onUploadClick={() => setIsUploadModalOpen(true)}
+            onEdit={(id) => console.log('Edit video', id)}
+            onDelete={deleteVideo}
+            onView={handleViewVideo}
+          />
         </section>
 
       </div>
