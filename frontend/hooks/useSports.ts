@@ -42,6 +42,7 @@ export function usePositions(sportId: number | null) {
   
   useEffect(() => {
     if (!sportId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPositions([]);
       return;
     }
@@ -53,6 +54,7 @@ export function usePositions(sportId: number | null) {
       return [{ id: 8, name: 'General' }];
     };
     
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPositions(getPositions());
   }, [sportId]);
 

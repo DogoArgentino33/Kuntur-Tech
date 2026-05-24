@@ -158,6 +158,62 @@ async def upload_video(
 
 
 @router.get(
+    "/feed",
+    response_model=List[dict],
+    summary="Get public video feed for clubs/scouts",
+)
+async def get_video_feed(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get all videos (approved/pending for MVP) for the club feed."""
+    from app.sports.models import Position
+    
+    videos = db.query(Video).order_by(Video.created_at.desc()).all()
+    
+    result = []
+    for video in videos:
+        athlete = db.query(Athlete).filter(Athlete.id == video.athlete_id).first()
+        if not athlete:
+            continue
+            
+        sport = db.query(Sport).filter(Sport.id == athlete.primary_sport_id).first()
+        position = db.query(Position).filter(Position.id == athlete.primary_position_id).first()
+        
+        # Calculate age
+        age = None
+        if athlete.date_of_birth:
+            today = datetime.today()
+            age = today.year - athlete.date_of_birth.year - ((today.month, today.day) < (athlete.date_of_birth.month, athlete.date_of_birth.day))
+            
+        result.append({
+            "id": video.id,
+            "title": video.title,
+            "description": video.description,
+            "file_url": video.file_url,
+            "thumbnail_url": video.thumbnail_url,
+            "duration_seconds": video.duration_seconds,
+            "views_count": video.views_count,
+            "created_at": video.created_at.isoformat(),
+            "athlete": {
+                "id": athlete.id,
+                "first_name": athlete.first_name,
+                "last_name": athlete.last_name,
+                "country": athlete.country,
+                "profile_picture_url": athlete.profile_picture_url,
+                "primary_sport": {"id": sport.id, "name": sport.name} if sport else None,
+                "primary_position": {"id": position.id, "name": position.name} if position else None,
+                "height_cm": athlete.height_cm,
+                "weight_kg": athlete.weight_kg,
+                "age": age,
+                "bio": athlete.bio
+            }
+        })
+        
+    return result
+
+
+@router.get(
     "/my-videos",
     response_model=List[VideoListResponse],
     summary="Get current athlete's videos",

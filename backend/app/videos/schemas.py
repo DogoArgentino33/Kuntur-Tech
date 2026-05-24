@@ -57,3 +57,32 @@ class VideoListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class FeedAthleteEmbed(BaseModel):
+    """Embedded athlete info for feed."""
+    id: int
+    first_name: str
+    last_name: str
+    country: str
+    profile_picture_url: Optional[str]
+    primary_sport: Optional[dict]  # {id, name}
+    primary_position: Optional[dict] # {id, name}
+    height_cm: Optional[int]
+    weight_kg: Optional[int]
+    age: Optional[int]
+    bio: Optional[str]
+
+class FeedVideoResponse(BaseModel):
+    """Schema for videos in the club feed."""
+    id: int
+    title: str
+    description: Optional[str]
+    file_url: str
+    thumbnail_url: Optional[str]
+    duration_seconds: int
+    views_count: int
+    created_at: datetime
+    athlete: FeedAthleteEmbed
+
+    class Config:
+        from_attributes = True
