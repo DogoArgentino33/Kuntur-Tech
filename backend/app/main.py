@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -19,11 +20,13 @@ from app.database import Base, engine
 from app.auth.models import User  # noqa: F401
 from app.users.models import Athlete, Club  # noqa: F401
 from app.sports.models import Sport, Position  # noqa: F401
+from app.videos.models import Video  # noqa: F401
 
 # Import routers
 from app.auth.router import router as auth_router
 from app.users.router import router as users_router
 from app.sports.router import router as sports_router
+from app.videos.router import router as videos_router
 
 # Import seed data
 from app.sports.data import seed_sports_data
@@ -104,6 +107,17 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(sports_router)
+app.include_router(videos_router)
+
+
+# ── Static Files (Video Uploads) ──────────────────────────────────
+
+import os
+from pathlib import Path
+
+uploads_dir = Path(__file__).parent.parent / "uploads"
+if uploads_dir.exists():
+    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 
 # ── Health Check ──────────────────────────────────────────────────

@@ -141,17 +141,26 @@ export function useDashboardData() {
       const athleteData: AthleteProfile = athleteRes.data;
       setAthlete(athleteData);
 
-      // ── Mock data for videos, interests, notifications
-      // (replace with real API calls when backend is ready)
+      // ── Fetch real videos from backend
+      try {
+        const videosRes = await api.get('/videos/my-videos');
+        setVideos(videosRes.data);
+      } catch (err) {
+        console.error('Error fetching videos:', err);
+        // Fall back to empty array
+        setVideos([]);
+      }
+
+      // ── Mock data for interests and notifications
       await new Promise((r) => setTimeout(r, 300)); // simulate network
-      setVideos(MOCK_VIDEOS);
       setInterests(MOCK_INTERESTS);
       setNotifications(MOCK_NOTIFICATIONS);
 
       // ── Calculate stats
       const completeness = calculateCompleteness(athleteData);
+      const videosData = await api.get('/videos/my-videos').then(r => r.data).catch(() => []);
       setStats({
-        totalViews: MOCK_VIDEOS.reduce((sum, v) => sum + v.views_count, 0),
+        totalViews: videosData.reduce((sum: number, v: any) => sum + v.views_count, 0),
         totalMessages: 4,
         totalFavorites: 8,
         profileCompleteness: completeness,

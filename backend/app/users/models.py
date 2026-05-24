@@ -56,6 +56,7 @@ class Athlete(Base):
     user = relationship("User", back_populates="athlete_profile")
     primary_sport = relationship("Sport", foreign_keys=[primary_sport_id])
     primary_position = relationship("Position", foreign_keys=[primary_position_id])
+    videos = relationship("Video", back_populates="athlete", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Athlete(id={self.id}, name='{self.first_name} {self.last_name}')>"
